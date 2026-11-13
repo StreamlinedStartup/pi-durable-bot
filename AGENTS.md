@@ -1,5 +1,7 @@
 # Rules for coding agents
 
+This repository is a fork maintained independently. Never open pull requests against or push to the original upstream project.
+
 Here to install or use Pots for someone, not to change its code? Read [docs/for-agents.md](docs/for-agents.md) instead.
 
 1. Read `README.md` first. It explains what the bot is and how the layers fit together.

@@ -41,7 +41,7 @@ Grok Bot, OpenAI dots, Claude Duet, Claude Tag and Meta Muse are closed products
 | **Source code** | Open, MIT | Closed | Closed | Closed | Closed | Closed |
 | **Where it runs** | Your server, your VM, your office box | xAI's cloud | OpenAI's cloud | Anthropic's cloud | Anthropic's cloud | Meta's cloud |
 | **Model** | Any: your subscription login, 40+ providers, or a local model | Grok | OpenAI's | Claude | Claude | Meta's |
-| **Where you talk to it** | Slack, Discord, Telegram, and any channel with a [Chat SDK](https://chat-sdk.dev) adapter | Mac and iOS apps; Slack for team bots | ChatGPT, Slack, Teams | Its own app | Slack | Web, mobile app, WhatsApp |
+| **Where you talk to it** | Slack, Discord, Telegram, Google Chat, and additional channels with a [Chat SDK](https://chat-sdk.dev) adapter | Mac and iOS apps; Slack for team bots | ChatGPT, Slack, Teams | Its own app | Slack | Web, mobile app, WhatsApp |
 | **Your data** | Stays on your machine, in each bot's folder | Sent to xAI | Sent to OpenAI | Sent to Anthropic | Sent to Anthropic | Sent to Meta |
 | **Custom work** | Anything. Change the code, add tools, connect your own systems | What the vendor allows | What the vendor allows | What the vendor allows | What the vendor allows | What the vendor allows |
 
@@ -49,7 +49,7 @@ Grok Bot, OpenAI dots, Claude Duet, Claude Tag and Meta Muse are closed products
 
 **Any model.** Log in once with a subscription you already pay for, use an API key from any of the 40+ providers [pi](https://github.com/earendil-works/pi) supports, point it at any OpenAI-compatible endpoint (vLLM, SGLang, a proxy), or run a local model with Ollama, LM Studio or llama.cpp. The bot uses pi's own model layer, so every model pi can use, the bot can use. With a local model for the agent and the judge, nothing leaves your machine. You are not locked to one model vendor.
 
-**Any channel.** The core speaks in five plain words: channel, place, thread, message, person. Platform details stay inside one adapter per platform. Slack, Discord and Telegram work today; Teams or email is one more adapter, not a rewrite. One bot can be in many channels and stays the same person everywhere.
+**Any channel.** The core speaks in five plain words: channel, place, thread, message, person. Platform details stay inside one adapter per platform. Slack, Discord, Telegram and Google Chat work today; Teams or email is one more adapter, not a rewrite. One bot can be in many channels and stays the same person everywhere.
 
 **Your business.** Give it your own tools, data and workflows. It can run several bots on one machine, each with its own name, persona, responsibilities and memory. A bot can even edit its own definition, or create a new bot.
 
@@ -260,6 +260,7 @@ flowchart LR
     S[Slack]
     D[Discord]
     TG[Telegram]
+    GC[Google Chat]
     T[Terminal]
   end
   subgraph Gateway[Gateway core, one per bot]
@@ -276,12 +277,14 @@ flowchart LR
   S --> I
   D --> I
   TG --> I
+  GC --> I
   T --> I
   K --> A
   A --> O
   O --> S
   O --> D
   O --> TG
+  O --> GC
   O --> T
 ```
 
@@ -316,6 +319,7 @@ pi-durable-bot runs every day as a teammate in a real workspace. What works toda
 
 - [x] Slack adapter (socket mode), with backfill after downtime
 - [x] Discord adapter (Gateway WebSocket), with backfill after downtime
+- [x] Google Chat adapter (webhooks and authenticated Pub/Sub); see [setup and limits](docs/google-chat.md)
 - [x] Telegram adapter (long polling). Telegram's Bot API cannot read history or look up a sent message, so the bot gets what it missed only within 24 hours, and a crash at the moment of a send can send it twice
 - [x] Mention, DM, judge and timer wakes, grouping, and steering
 - [x] Code mode on its own machine, `pots` command line
