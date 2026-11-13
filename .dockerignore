@@ -1,0 +1,15 @@
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!src/
+!src/**
+!skills/
+!skills/**
+!pi-package/
+!pi-package/**
+!kit/
+!kit/**
+!docs/
+!docs/google-chat.md
