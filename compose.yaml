@@ -1,0 +1,57 @@
+services:
+  pots:
+    build: .
+    init: true
+    restart: unless-stopped
+    command: ["node", "/app/scripts/infisical-start.ts"]
+    environment:
+      INFISICAL_URL: http://infisical-relay:8080
+      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID:?}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:?}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:?}
+    expose:
+      - "8088"
+    volumes:
+      - pots-data:/home/node/.pots
+    depends_on:
+      - infisical-relay
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 2g
+
+  infisical-relay:
+    image: node:24-bookworm-slim
+    user: node
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - default
+      - infisical
+    command:
+      - node
+      - -e
+      - |
+        const http = require('node:http');
+        http.createServer((req, res) => {
+          const upstream = http.request({ hostname: 'infisical', port: 8080, path: req.url, method: req.method, headers: req.headers }, response => {
+            res.writeHead(response.statusCode, response.headers);
+            response.pipe(res);
+          });
+          upstream.on('error', () => res.writeHead(502).end());
+          req.pipe(upstream);
+        }).listen(8080, '0.0.0.0');
+
+volumes:
+  pots-data:
+
+networks:
+  infisical:
+    external: true
+    name: ${INFISICAL_NETWORK:?}

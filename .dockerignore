@@ -5,6 +5,8 @@
 !tsconfig.build.json
 !src/
 !src/**
+!scripts/
+!scripts/infisical-start.ts
 !skills/
 !skills/**
 !pi-package/
