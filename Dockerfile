@@ -11,6 +11,7 @@ COPY --from=build /app/package.json /app/package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY scripts/infisical-start.ts ./scripts/infisical-start.ts
+COPY scripts/codex-broker.ts scripts/coolify-start.ts ./scripts/
 COPY skills ./skills
 COPY pi-package ./pi-package
 COPY kit ./kit

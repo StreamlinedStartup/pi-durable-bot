@@ -7,6 +7,8 @@
 !src/**
 !scripts/
 !scripts/infisical-start.ts
+!scripts/codex-broker.ts
+!scripts/coolify-start.ts
 !skills/
 !skills/**
 !pi-package/
@@ -15,3 +17,4 @@
 !kit/**
 !docs/
 !docs/google-chat.md
+!docs/coolify.md

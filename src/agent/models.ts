@@ -1,4 +1,4 @@
-import type { AnyModel, Models, Provider } from "@earendil-works/pi-ai";
+import type { AnyModel, CredentialStore, Models, OAuthCredential, Provider } from "@earendil-works/pi-ai";
 import { type LazyStreamObserver, lazyStream } from "@earendil-works/pi-ai/api/lazy";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { TelemetrySpan } from "@earendil-works/pi-telemetry";
@@ -19,7 +19,19 @@ export async function openModels(): Promise<Models> {
   // From pi's public entry. It also loads pi's terminal interface, which the bot does not use: about 0.3 seconds and
   // 20 MB more, once, when the gateway starts.
   const { ModelRuntime: Runtime } = await import("@earendil-works/pi-coding-agent");
-  const models = await Runtime.create();
+  const broker = process.env.POTS_CODEX_BROKER_URL;
+  const credentials: CredentialStore | undefined = broker ? {
+    async read(provider) {
+      if (provider !== "openai-codex") return undefined;
+      const response = await fetch(broker);
+      if (!response.ok) throw new Error(`Codex broker failed (${response.status})`);
+      return await response.json() as OAuthCredential;
+    },
+    async list() { return [{ providerId: "openai-codex", type: "oauth" }]; },
+    async modify() { throw new Error("Codex broker manages credential refresh"); },
+    async delete() { throw new Error("Codex broker manages credential refresh"); },
+  } : undefined;
+  const models = await Runtime.create(credentials ? { credentials } : {});
   // pi registers llama.cpp from a built-in extension. It brings the router's chat models and its classifiers (decision
   // models through /v1/systemone, chat models through next-token probabilities).
   const llama: { createLlamaProvider(): { provider: Provider } } = await import(piModule("./extensions/llama/provider.js"));

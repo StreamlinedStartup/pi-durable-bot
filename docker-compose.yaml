@@ -1,25 +1,34 @@
+x-block-secrets: &block-secrets
+  INFISICAL_CLIENT_ID: ""
+  INFISICAL_CLIENT_SECRET: ""
+  CODEX_BROKER_CLIENT_ID: ""
+  CODEX_BROKER_CLIENT_SECRET: ""
+  CODEX_OAUTH: ""
+  GOOGLE_CHAT_CREDENTIALS: ""
+
 services:
   pots:
     build: .
     init: true
     restart: unless-stopped
-    command: ["node", "/app/scripts/infisical-start.ts"]
+    command: ["node", "/app/scripts/coolify-start.ts"]
     environment:
-      INFISICAL_URL: http://infisical-relay:8080
-      INFISICAL_PROJECT_ID: ${INFISICAL_PROJECT_ID:?}
-      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:?}
-      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:?}
+      <<: *block-secrets
+      GOOGLE_CHAT_CREDENTIALS: ${GOOGLE_CHAT_CREDENTIALS:?}
+      GOOGLE_CHAT_ENDPOINT_URL: ${GOOGLE_CHAT_ENDPOINT_URL:?}
+      GOOGLE_CHAT_BOT_USER_ID: ${GOOGLE_CHAT_BOT_USER_ID:?}
+      POTS_CODEX_BROKER_URL: http://codex-broker:8089/
       HTTP_PROXY: http://egress-proxy:3128
       HTTPS_PROXY: http://egress-proxy:3128
-      NO_PROXY: localhost,127.0.0.1,infisical-relay
+      NO_PROXY: localhost,127.0.0.1,codex-broker
       http_proxy: http://egress-proxy:3128
       https_proxy: http://egress-proxy:3128
-      no_proxy: localhost,127.0.0.1,infisical-relay
+      no_proxy: localhost,127.0.0.1,codex-broker
       NODE_USE_ENV_PROXY: "1"
     volumes:
       - pots-data:/home/node/.pots
     depends_on:
-      - infisical-relay
+      - codex-broker
       - egress-proxy
     networks:
       - isolated
@@ -30,11 +39,39 @@ services:
     pids_limit: 256
     mem_limit: 2g
 
+  codex-broker:
+    build: .
+    init: true
+    restart: unless-stopped
+    command: ["node", "/app/scripts/codex-broker.ts"]
+    environment:
+      <<: *block-secrets
+      INFISICAL_URL: http://infisical-relay:8080
+      CODEX_PROJECT_ID: ${CODEX_PROJECT_ID:?}
+      CODEX_BROKER_CLIENT_ID: ${CODEX_BROKER_CLIENT_ID:?}
+      CODEX_BROKER_CLIENT_SECRET: ${CODEX_BROKER_CLIENT_SECRET:?}
+      HTTPS_PROXY: http://egress-proxy:3128
+      NO_PROXY: localhost,127.0.0.1,infisical-relay
+      NODE_USE_ENV_PROXY: "1"
+    depends_on:
+      - infisical-relay
+      - egress-proxy
+    networks:
+      - isolated
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    pids_limit: 128
+    mem_limit: 256m
+
   infisical-relay:
     image: node:24-bookworm-slim
     user: node
     restart: unless-stopped
     read_only: true
+    environment: *block-secrets
     cap_drop:
       - ALL
     security_opt:
@@ -61,6 +98,7 @@ services:
     user: node
     restart: unless-stopped
     read_only: true
+    environment: *block-secrets
     cap_drop:
       - ALL
     security_opt:
@@ -88,6 +126,7 @@ services:
     image: ubuntu/squid:6.6-24.04_edge
     restart: unless-stopped
     environment:
+      <<: *block-secrets
       VPS_PUBLIC_IP: ${VPS_PUBLIC_IP:?}
     entrypoint: ["/bin/sh", "-c"]
     command:
