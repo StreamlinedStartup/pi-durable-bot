@@ -12,9 +12,15 @@ services:
     init: true
     restart: unless-stopped
     command: ["node", "/app/scripts/coolify-start.ts"]
+    env_file:
+      - path: .env
+        required: false
     environment:
-      <<: *block-secrets
-      GOOGLE_CHAT_CREDENTIALS: ${GOOGLE_CHAT_CREDENTIALS:?}
+      INFISICAL_CLIENT_ID: ""
+      INFISICAL_CLIENT_SECRET: ""
+      CODEX_BROKER_CLIENT_ID: ""
+      CODEX_BROKER_CLIENT_SECRET: ""
+      CODEX_OAUTH: ""
       GOOGLE_CHAT_ENDPOINT_URL: ${GOOGLE_CHAT_ENDPOINT_URL:?}
       GOOGLE_CHAT_BOT_USER_ID: ${GOOGLE_CHAT_BOT_USER_ID:?}
       POTS_CODEX_BROKER_URL: http://codex-broker:8089/
@@ -44,12 +50,16 @@ services:
     init: true
     restart: unless-stopped
     command: ["node", "/app/scripts/codex-broker.ts"]
+    env_file:
+      - path: .env
+        required: false
     environment:
-      <<: *block-secrets
+      INFISICAL_CLIENT_ID: ""
+      INFISICAL_CLIENT_SECRET: ""
+      GOOGLE_CHAT_CREDENTIALS: ""
+      CODEX_OAUTH: ""
       INFISICAL_URL: http://infisical-relay:8080
       CODEX_PROJECT_ID: ${CODEX_PROJECT_ID:?}
-      CODEX_BROKER_CLIENT_ID: ${CODEX_BROKER_CLIENT_ID:?}
-      CODEX_BROKER_CLIENT_SECRET: ${CODEX_BROKER_CLIENT_SECRET:?}
       HTTPS_PROXY: http://egress-proxy:3128
       NO_PROXY: localhost,127.0.0.1,infisical-relay
       NODE_USE_ENV_PROXY: "1"
