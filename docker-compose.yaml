@@ -105,6 +105,15 @@ services:
       - no-new-privileges:true
     expose:
       - "8088"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${COOLIFY_RESOURCE_UUID:?}
+      - traefik.http.routers.pots-webhook.rule=Host(`${POTS_DOMAIN:?}`)
+      - traefik.http.routers.pots-webhook.entrypoints=http
+      - traefik.http.routers.pots-webhook-secure.rule=Host(`${POTS_DOMAIN:?}`)
+      - traefik.http.routers.pots-webhook-secure.entrypoints=https
+      - traefik.http.routers.pots-webhook-secure.tls=true
+      - traefik.http.services.pots-webhook.loadbalancer.server.port=8088
     networks:
       - default
       - isolated
@@ -132,10 +141,24 @@ services:
     command:
       - |
         case "$$VPS_PUBLIC_IP" in *[!0-9.]*|'') exit 1 ;; esac
-        sed "s/__VPS_PUBLIC_IP__/$$VPS_PUBLIC_IP/" /etc/squid/pots.conf > /tmp/pots-squid.conf
+        sed "s/__VPS_PUBLIC_IP__/$$VPS_PUBLIC_IP/" > /tmp/pots-squid.conf <<'CONFIG'
+        http_port 3128
+        acl allowed_ports port 80 443
+        acl ssl_ports port 443
+        acl CONNECT method CONNECT
+        acl blocked dst 0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4 ::/0
+        acl vps dst __VPS_PUBLIC_IP__/32
+        acl blocked_domains dstdomain .vrtsolutions.work .vulturecouncil.com
+        http_access deny !allowed_ports
+        http_access deny CONNECT !ssl_ports
+        http_access deny blocked
+        http_access deny blocked_domains
+        http_access deny vps
+        http_access allow all
+        access_log none
+        cache deny all
+        CONFIG
         exec squid -N -f /tmp/pots-squid.conf
-    volumes:
-      - ./deploy/squid.conf:/etc/squid/pots.conf:ro
     networks:
       - default
       - isolated
@@ -144,6 +167,9 @@ volumes:
   pots-data:
 
 networks:
+  default:
+    external: true
+    name: ${COOLIFY_RESOURCE_UUID:?}
   isolated:
     internal: true
     driver_opts:
